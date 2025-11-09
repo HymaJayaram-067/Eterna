@@ -37,14 +37,33 @@ export class GeckoTerminalClient {
 
     return this.backoff.execute(async () => {
       try {
-        const response = await this.client.get('/networks/solana/trending_pools');
+        // Fetch trending pools (usually returns ~10-20 tokens)
+        const trendingResponse = await this.client.get('/networks/solana/trending_pools');
+        const trendingPools = trendingResponse.data?.data || [];
+        
+        logger.info(`GeckoTerminal: Fetched ${trendingPools.length} trending pools`);
 
-        if (!response.data || !response.data.data) {
-          logger.warn('GeckoTerminal: No trending pools found');
+        // Also fetch new pools to get more variety
+        let newPools: any[] = [];
+        try {
+          const newPoolsResponse = await this.client.get('/networks/solana/new_pools', {
+            params: { page: 1 }
+          });
+          newPools = newPoolsResponse.data?.data || [];
+          logger.info(`GeckoTerminal: Fetched ${newPools.length} new pools`);
+        } catch (error) {
+          logger.debug('GeckoTerminal: Could not fetch new pools', error);
+        }
+
+        // Combine both sources
+        const allPools = [...trendingPools, ...newPools];
+
+        if (allPools.length === 0) {
+          logger.warn('GeckoTerminal: No pools found');
           return [];
         }
 
-        return this.transformPools(response.data.data);
+        return this.transformPools(allPools);
       } catch (error) {
         logger.error('GeckoTerminal trending tokens error', error);
         return [];

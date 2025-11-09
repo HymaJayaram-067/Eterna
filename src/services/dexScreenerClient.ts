@@ -34,16 +34,47 @@ export class DexScreenerClient {
 
     return this.backoff.execute(async () => {
       try {
-        const response = await this.client.get(`/latest/dex/search`, {
-          params: { q: query },
-        });
+        // Try to get token boosted pairs for Solana first (returns more results)
+        let response;
+        try {
+          response = await this.client.get(`/token-boosts/top/v1/solana`);
+          if (response.data && response.data.length > 0) {
+            logger.info(`DexScreener: Fetched ${response.data.length} boosted tokens`);
+            return this.transformBoostedTokens(response.data);
+          }
+        } catch (boostedError) {
+          logger.debug('DexScreener: Boosted tokens endpoint not available, falling back to search');
+        }
 
-        if (!response.data || !response.data.pairs) {
-          logger.warn('DexScreener: No pairs found in response');
+        // Fallback to search endpoint with multiple popular searches
+        const searches = ['SOL', 'USDC', 'meme', 'WIF', 'BONK'];
+        const allPairs: any[] = [];
+
+        for (const searchTerm of searches) {
+          try {
+            const searchResponse = await this.client.get(`/latest/dex/search`, {
+              params: { q: searchTerm },
+            });
+
+            if (searchResponse.data && searchResponse.data.pairs) {
+              allPairs.push(...searchResponse.data.pairs);
+              logger.debug(`DexScreener: Found ${searchResponse.data.pairs.length} pairs for "${searchTerm}"`);
+            }
+          } catch (searchError) {
+            logger.debug(`DexScreener: Search failed for "${searchTerm}"`, searchError);
+          }
+
+          // Small delay between searches to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        if (allPairs.length === 0) {
+          logger.warn('DexScreener: No pairs found in any search');
           return [];
         }
 
-        return this.transformPairs(response.data.pairs);
+        logger.info(`DexScreener: Total pairs found: ${allPairs.length}`);
+        return this.transformPairs(allPairs);
       } catch (error) {
         logger.error('DexScreener search error', error);
         throw error;
@@ -88,6 +119,28 @@ export class DexScreenerClient {
         price_24hr_change: pair.priceChange?.h24 || 0,
         price_7d_change: pair.priceChange?.h7 || 0,
         protocol: pair.dexId || 'Unknown DEX',
+        last_updated: Date.now(),
+      }))
+      .filter(token => token.token_address);
+  }
+
+  private transformBoostedTokens(tokens: any[]): Token[] {
+    // Transform boosted tokens which have a different structure
+    return tokens
+      .filter(token => token.chainId === 'solana')
+      .map(token => ({
+        token_address: token.tokenAddress || '',
+        token_name: token.name || 'Unknown',
+        token_ticker: token.symbol || 'UNKNOWN',
+        price_sol: parseFloat(token.priceNative || '0'),
+        market_cap_sol: parseFloat(token.marketCap || '0') / 100,
+        volume_sol: parseFloat(token.volume?.h24 || '0') / 100,
+        liquidity_sol: parseFloat(token.liquidity || '0') / 100,
+        transaction_count: token.txCount || 0,
+        price_1hr_change: parseFloat(token.priceChange?.h1 || '0'),
+        price_24hr_change: parseFloat(token.priceChange?.h24 || '0'),
+        price_7d_change: parseFloat(token.priceChange?.h7 || '0'),
+        protocol: token.dexId || 'Unknown DEX',
         last_updated: Date.now(),
       }))
       .filter(token => token.token_address);
