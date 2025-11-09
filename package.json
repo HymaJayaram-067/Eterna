@@ -4,7 +4,7 @@
   "description": "Real-time meme coin data aggregation service",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc && cd frontend && npm run build",
+    "build": "tsc -p tsconfig.build.json && cd frontend && npm run build",
     "build:backend": "tsc",
     "build:frontend": "cd frontend && npm run build",
     "dev": "ts-node src/index.ts",
