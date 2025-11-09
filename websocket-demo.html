@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eterna WebSocket Demo</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .connected {
+            background-color: #4caf50;
+            color: white;
+        }
+        .disconnected {
+            background-color: #f44336;
+            color: white;
+        }
+        .token-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .token-card {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+        .token-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .token-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .token-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .token-ticker {
+            color: #666;
+            font-size: 14px;
+        }
+        .token-stats {
+            font-size: 12px;
+            color: #666;
+        }
+        .price-change {
+            font-weight: bold;
+        }
+        .price-change.positive {
+            color: #4caf50;
+        }
+        .price-change.negative {
+            color: #f44336;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0b7dda;
+        }
+        .logs {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #2196F3;
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Eterna - Real-time Token Monitor</h1>
+        
+        <div id="status" class="status disconnected">Disconnected</div>
+        
+        <div class="controls">
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+        
+        <h2>Live Token Data</h2>
+        <div id="tokens" class="token-grid"></div>
+        
+        <h2>Event Logs</h2>
+        <div id="logs" class="logs"></div>
+    </div>
+
+    <script>
+        let socket = null;
+        const tokens = new Map();
+        
+        function connect() {
+            const serverUrl = 'http://localhost:3000';
+            socket = io(serverUrl);
+            
+            socket.on('connect', () => {
+                updateStatus(true);
+                addLog('Connected to server');
+            });
+            
+            socket.on('disconnect', () => {
+                updateStatus(false);
+                addLog('Disconnected from server');
+            });
+            
+            socket.on('initial_data', (message) => {
+                addLog(`Received initial data: ${message.data.length} tokens`);
+                if (message.data && Array.isArray(message.data)) {
+                    message.data.forEach(token => {
+                        tokens.set(token.token_address, token);
+                    });
+                    renderTokens();
+                }
+            });
+            
+            socket.on('price_update', (message) => {
+                addLog(`Price update: ${message.data.token_ticker}`);
+                showNotification(`💰 ${message.data.token_ticker} price changed!`);
+                tokens.set(message.data.token_address, message.data);
+                renderTokens();
+            });
+            
+            socket.on('volume_spike', (message) => {
+                addLog(`Volume spike: ${message.data.token_ticker}`);
+                showNotification(`📈 ${message.data.token_ticker} volume spike!`);
+                tokens.set(message.data.token_address, message.data);
+                renderTokens();
+            });
+            
+            socket.on('error', (message) => {
+                addLog(`Error: ${message.error}`);
+            });
+        }
+        
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+        }
+        
+        function updateStatus(connected) {
+            const statusEl = document.getElementById('status');
+            if (connected) {
+                statusEl.textContent = 'Connected';
+                statusEl.className = 'status connected';
+            } else {
+                statusEl.textContent = 'Disconnected';
+                statusEl.className = 'status disconnected';
+            }
+        }
+        
+        function addLog(message) {
+            const logsEl = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logsEl.insertBefore(logEntry, logsEl.firstChild);
+            
+            // Keep only last 50 logs
+            while (logsEl.children.length > 50) {
+                logsEl.removeChild(logsEl.lastChild);
+            }
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        function renderTokens() {
+            const tokensEl = document.getElementById('tokens');
+            tokensEl.innerHTML = '';
+            
+            const sortedTokens = Array.from(tokens.values())
+                .sort((a, b) => b.volume_sol - a.volume_sol)
+                .slice(0, 12);
+            
+            sortedTokens.forEach(token => {
+                const card = document.createElement('div');
+                card.className = 'token-card';
+                
+                const priceChangeClass = token.price_1hr_change >= 0 ? 'positive' : 'negative';
+                const priceChangeSign = token.price_1hr_change >= 0 ? '+' : '';
+                
+                card.innerHTML = `
+                    <div class="token-header">
+                        <div>
+                            <div class="token-name">${token.token_name}</div>
+                            <div class="token-ticker">${token.token_ticker}</div>
+                        </div>
+                        <div class="price-change ${priceChangeClass}">
+                            ${priceChangeSign}${token.price_1hr_change.toFixed(2)}%
+                        </div>
+                    </div>
+                    <div class="token-stats">
+                        <div>Price: ${token.price_sol.toFixed(8)} SOL</div>
+                        <div>Volume: ${token.volume_sol.toFixed(2)} SOL</div>
+                        <div>Market Cap: ${token.market_cap_sol.toFixed(2)} SOL</div>
+                        <div>Protocol: ${token.protocol}</div>
+                        <div>Source: ${token.source}</div>
+                    </div>
+                `;
+                
+                tokensEl.appendChild(card);
+            });
+        }
+        
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // Auto-connect on load
+        window.addEventListener('load', () => {
+            connect();
+        });
+    </script>
+</body>
+</html>
