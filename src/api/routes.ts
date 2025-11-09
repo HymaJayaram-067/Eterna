@@ -3,6 +3,8 @@ import { tokenAggregator } from '../services/tokenAggregator';
 import { TokenQueryParams, ApiResponse, Token, PaginatedResponse } from '../types';
 import logger from '../utils/logger';
 import { wsService } from '../websocket/websocketService';
+import { config } from '../config';
+import { cacheService } from '../services/cacheService';
 
 const router = Router();
 
@@ -36,6 +38,8 @@ router.get('/tokens', async (req: Request, res: Response) => {
     const response: ApiResponse<PaginatedResponse<Token>> = {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch tokens',
+      errorCode: 'TOKEN_FETCH_ERROR',
+      errorDetails: 'An error occurred while fetching token data. Please try again later or contact support if the issue persists.',
       timestamp: Date.now(),
     };
     res.status(500).json(response);
@@ -72,6 +76,8 @@ router.get('/tokens/:address', async (req: Request, res: Response) => {
     const response: ApiResponse<Token> = {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch token',
+      errorCode: 'TOKEN_NOT_FOUND',
+      errorDetails: `Could not retrieve token with address: ${req.params.address}. Please verify the address and try again.`,
       timestamp: Date.now(),
     };
     res.status(500).json(response);
@@ -98,6 +104,8 @@ router.post('/refresh', async (req: Request, res: Response) => {
     const response: ApiResponse<{ message: string }> = {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to refresh cache',
+      errorCode: 'CACHE_REFRESH_ERROR',
+      errorDetails: 'Unable to refresh the cache. This may be due to rate limiting or temporary service unavailability.',
       timestamp: Date.now(),
     };
     res.status(500).json(response);
@@ -124,6 +132,72 @@ router.get('/health', (req: Request, res: Response) => {
   };
 
   res.json(response);
+});
+
+/**
+ * GET /api/config
+ * Get current configuration
+ */
+router.get('/config', (req: Request, res: Response) => {
+  const response: ApiResponse<{
+    cacheTTL: number;
+    refreshInterval: number;
+    rateLimits: {
+      dexScreener: number;
+      jupiter: number;
+      geckoTerminal: number;
+    };
+  }> = {
+    success: true,
+    data: {
+      cacheTTL: config.redis.ttl,
+      refreshInterval: config.dataRefresh.interval,
+      rateLimits: config.rateLimits,
+    },
+    timestamp: Date.now(),
+  };
+
+  res.json(response);
+});
+
+/**
+ * PUT /api/config/cache-ttl
+ * Update cache TTL (requires restart to take full effect)
+ */
+router.put('/config/cache-ttl', async (req: Request, res: Response) => {
+  try {
+    const { ttl } = req.body;
+    
+    if (!ttl || typeof ttl !== 'number' || ttl < 1 || ttl > 3600) {
+      const response: ApiResponse<{ message: string }> = {
+        success: false,
+        error: 'Invalid TTL value. Must be a number between 1 and 3600 seconds',
+        timestamp: Date.now(),
+      };
+      return res.status(400).json(response);
+    }
+
+    config.redis.ttl = ttl;
+    
+    const response: ApiResponse<{ message: string; newTTL: number }> = {
+      success: true,
+      data: {
+        message: 'Cache TTL updated successfully',
+        newTTL: ttl,
+      },
+      timestamp: Date.now(),
+    };
+
+    res.json(response);
+  } catch (error) {
+    logger.error('Error updating cache TTL', error);
+    const response: ApiResponse<{ message: string }> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update cache TTL',
+      timestamp: Date.now(),
+    };
+    res.status(500).json(response);
+  }
 });
 
 export default router;
