@@ -1,0 +1,244 @@
+{
+  "info": {
+    "name": "Eterna Data Aggregator API",
+    "description": "Collection for testing the Eterna real-time meme coin data aggregation service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Service Info",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": ["{{baseUrl}}"],
+          "path": [""]
+        },
+        "description": "Get service information and available endpoints"
+      }
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Check service health and status"
+      }
+    },
+    {
+      "name": "Get All Tokens",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tokens",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tokens"]
+        },
+        "description": "Get all tokens with default pagination (30 per page)"
+      }
+    },
+    {
+      "name": "Get Tokens with Pagination",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tokens?limit=10&cursor=0",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "cursor",
+              "value": "0"
+            }
+          ]
+        },
+        "description": "Get paginated tokens (10 per page)"
+      }
+    },
+    {
+      "name": "Get Tokens Sorted by Volume",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tokens?sortBy=volume&sortOrder=desc&limit=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "volume"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "description": "Get top 20 tokens by volume"
+      }
+    },
+    {
+      "name": "Get Tokens Sorted by Price Change",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tokens?sortBy=price_change&sortOrder=desc&limit=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "price_change"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "description": "Get top 20 tokens by price change"
+      }
+    },
+    {
+      "name": "Get Tokens Sorted by Market Cap",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tokens?sortBy=market_cap&sortOrder=desc&limit=15",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "market_cap"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "limit",
+              "value": "15"
+            }
+          ]
+        },
+        "description": "Get top 15 tokens by market cap"
+      }
+    },
+    {
+      "name": "Filter by Minimum Volume",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tokens?minVolume=1000&sortBy=volume&sortOrder=desc",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "minVolume",
+              "value": "1000"
+            },
+            {
+              "key": "sortBy",
+              "value": "volume"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            }
+          ]
+        },
+        "description": "Get tokens with minimum volume of 1000 SOL"
+      }
+    },
+    {
+      "name": "Filter by Minimum Market Cap",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tokens?minMarketCap=500&sortBy=market_cap&sortOrder=desc",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "minMarketCap",
+              "value": "500"
+            },
+            {
+              "key": "sortBy",
+              "value": "market_cap"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            }
+          ]
+        },
+        "description": "Get tokens with minimum market cap of 500 SOL"
+      }
+    },
+    {
+      "name": "Get Token by Address",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/tokens/{{tokenAddress}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "tokens", "{{tokenAddress}}"]
+        },
+        "description": "Get specific token details by address"
+      }
+    },
+    {
+      "name": "Refresh Cache",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/refresh",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "refresh"]
+        },
+        "description": "Manually trigger cache refresh"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "tokenAddress",
+      "value": "576P1t7XsRL4ZVj38LV2eYWxXRPguBADA8BxcNz1xo8y",
+      "type": "string"
+    }
+  ]
+}

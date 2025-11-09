@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eterna WebSocket Test Client</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .connected { background: #27ae60; }
+        .disconnected { background: #e74c3c; }
+        .section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .token-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .token-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .token-card.updated {
+            animation: pulse 0.5s;
+            border-color: #3498db;
+        }
+        @keyframes pulse {
+            0%, 100% { background: #fafafa; }
+            50% { background: #e3f2fd; }
+        }
+        .positive { color: #27ae60; }
+        .negative { color: #e74c3c; }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover { background: #2980b9; }
+        .log {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #3498db;
+            padding-left: 10px;
+        }
+        .stat-box {
+            display: inline-block;
+            margin: 10px 20px 10px 0;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Eterna WebSocket Test Client</h1>
+        <p>Connection Status: <span id="status" class="status disconnected">Disconnected</span></p>
+        <div>
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+            <button onclick="subscribe('default')">Subscribe</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📊 Statistics</h2>
+        <div>
+            <div class="stat-box">
+                <div class="stat-label">Total Tokens</div>
+                <div class="stat-value" id="tokenCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Price Updates</div>
+                <div class="stat-value" id="updateCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Volume Spikes</div>
+                <div class="stat-value" id="spikeCount">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Last Update</div>
+                <div class="stat-value" id="lastUpdate">Never</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💰 Live Tokens</h2>
+        <div id="tokens" class="token-grid">
+            <p>Connect to see live token data...</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📝 Event Log</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let socket = null;
+        let tokens = {};
+        let updateCount = 0;
+        let spikeCount = 0;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.insertBefore(entry, logDiv.firstChild);
+        }
+
+        function updateStatus(connected) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = connected ? 'Connected' : 'Disconnected';
+            statusEl.className = `status ${connected ? 'connected' : 'disconnected'}`;
+        }
+
+        function connect() {
+            if (socket) {
+                log('Already connected');
+                return;
+            }
+
+            socket = io('http://localhost:3000');
+
+            socket.on('connect', () => {
+                log('Connected to server');
+                updateStatus(true);
+            });
+
+            socket.on('disconnect', () => {
+                log('Disconnected from server');
+                updateStatus(false);
+            });
+
+            socket.on('initial_data', (data) => {
+                log(`Received initial data: ${data.data.length} tokens`);
+                updateTokens(data.data);
+            });
+
+            socket.on('update', (message) => {
+                log(`Update received: ${message.type}`);
+                
+                if (message.type === 'price_update') {
+                    updateCount++;
+                    document.getElementById('updateCount').textContent = updateCount;
+                    updateTokens(message.data, true);
+                } else if (message.type === 'volume_spike') {
+                    spikeCount++;
+                    document.getElementById('spikeCount').textContent = spikeCount;
+                    log(`Volume spike detected: ${message.data.length} tokens`);
+                }
+                
+                document.getElementById('lastUpdate').textContent = 
+                    new Date(message.timestamp).toLocaleTimeString();
+            });
+
+            socket.on('error', (message) => {
+                log(`Error: ${message.data.message}`, 'error');
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                log('Manually disconnected');
+            }
+        }
+
+        function subscribe(channel) {
+            if (!socket) {
+                log('Not connected');
+                return;
+            }
+            socket.emit('subscribe', { channel });
+            log(`Subscribed to channel: ${channel}`);
+        }
+
+        function updateTokens(tokenList, highlight = false) {
+            tokenList.forEach(token => {
+                tokens[token.token_address] = token;
+            });
+
+            const tokensDiv = document.getElementById('tokens');
+            tokensDiv.innerHTML = '';
+
+            document.getElementById('tokenCount').textContent = Object.keys(tokens).length;
+
+            Object.values(tokens).slice(0, 12).forEach(token => {
+                const card = document.createElement('div');
+                card.className = `token-card ${highlight ? 'updated' : ''}`;
+                card.innerHTML = `
+                    <h3>${token.token_ticker}</h3>
+                    <p style="font-size: 12px; color: #7f8c8d;">${token.token_name}</p>
+                    <p><strong>Price:</strong> ${token.price_sol.toFixed(9)} SOL</p>
+                    <p><strong>Volume:</strong> ${token.volume_sol.toFixed(2)} SOL</p>
+                    <p><strong>Market Cap:</strong> ${token.market_cap_sol.toFixed(2)} SOL</p>
+                    <p><strong>1h Change:</strong> 
+                        <span class="${token.price_1hr_change >= 0 ? 'positive' : 'negative'}">
+                            ${token.price_1hr_change >= 0 ? '+' : ''}${token.price_1hr_change.toFixed(2)}%
+                        </span>
+                    </p>
+                    <p style="font-size: 11px; color: #95a5a6;">${token.protocol}</p>
+                `;
+                tokensDiv.appendChild(card);
+            });
+        }
+
+        // Auto-connect on page load
+        window.addEventListener('load', () => {
+            log('WebSocket client ready');
+        });
+    </script>
+</body>
+</html>
