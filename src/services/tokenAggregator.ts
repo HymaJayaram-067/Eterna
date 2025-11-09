@@ -147,11 +147,12 @@ export class TokenAggregatorService {
         case 'volume':
           comparison = a.volume_sol - b.volume_sol;
           break;
-        case 'price_change':
+        case 'price_change': {
           const aChange = a.price_1hr_change || 0;
           const bChange = b.price_1hr_change || 0;
           comparison = aChange - bChange;
           break;
+        }
         case 'market_cap':
           comparison = a.market_cap_sol - b.market_cap_sol;
           break;

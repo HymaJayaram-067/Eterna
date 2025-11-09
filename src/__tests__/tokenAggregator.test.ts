@@ -7,14 +7,10 @@ jest.mock('../services/jupiterClient');
 jest.mock('../services/geckoTerminalClient');
 jest.mock('../services/cacheService');
 
-import { DexScreenerClient } from '../services/dexScreenerClient';
-import { GeckoTerminalClient } from '../services/geckoTerminalClient';
 import { cacheService } from '../services/cacheService';
 
 describe('TokenAggregatorService', () => {
   let aggregator: TokenAggregatorService;
-  let mockDexScreener: jest.Mocked<DexScreenerClient>;
-  let mockGeckoTerminal: jest.Mocked<GeckoTerminalClient>;
 
   const mockTokens: Token[] = [
     {
@@ -68,16 +64,18 @@ describe('TokenAggregatorService', () => {
 
     it('should fetch from multiple sources when cache is empty', async () => {
       (cacheService.getTokens as jest.Mock).mockResolvedValue(null);
+      (cacheService.setTokens as jest.Mock).mockResolvedValue(undefined);
       
-      // Mock DexScreener
-      const mockSearchTokens = jest.fn().mockResolvedValue([mockTokens[0]]);
-      DexScreenerClient.prototype.searchTokens = mockSearchTokens;
-      
-      // Mock GeckoTerminal
-      const mockGetTrending = jest.fn().mockResolvedValue([mockTokens[1]]);
-      GeckoTerminalClient.prototype.getTrendingTokens = mockGetTrending;
+      // Create a new instance and override the methods
+      const aggregatorTest = new TokenAggregatorService();
+      (aggregatorTest as any).dexScreener = {
+        searchTokens: jest.fn().mockResolvedValue([mockTokens[0]]),
+      };
+      (aggregatorTest as any).geckoTerminal = {
+        getTrendingTokens: jest.fn().mockResolvedValue([mockTokens[1]]),
+      };
 
-      const result = await aggregator.aggregateTokens(false);
+      const result = await aggregatorTest.aggregateTokens(false);
 
       expect(result.length).toBeGreaterThan(0);
       expect(cacheService.setTokens).toHaveBeenCalled();
@@ -139,11 +137,17 @@ describe('TokenAggregatorService', () => {
 
     it('should fetch from API if not in cache', async () => {
       (cacheService.get as jest.Mock).mockResolvedValue(null);
+      (cacheService.set as jest.Mock).mockResolvedValue(undefined);
       
-      const mockGetToken = jest.fn().mockResolvedValue(mockTokens[0]);
-      DexScreenerClient.prototype.getTokenByAddress = mockGetToken;
+      const aggregatorTest = new TokenAggregatorService();
+      (aggregatorTest as any).dexScreener = {
+        getTokenByAddress: jest.fn().mockResolvedValue(mockTokens[0]),
+      };
+      (aggregatorTest as any).geckoTerminal = {
+        getTokenInfo: jest.fn().mockResolvedValue(null),
+      };
 
-      const result = await aggregator.getTokenByAddress('addr1');
+      const result = await aggregatorTest.getTokenByAddress('addr1');
 
       expect(result).toBeDefined();
       expect(cacheService.set).toHaveBeenCalled();
@@ -152,11 +156,15 @@ describe('TokenAggregatorService', () => {
     it('should return null if token not found', async () => {
       (cacheService.get as jest.Mock).mockResolvedValue(null);
       
-      const mockGetToken = jest.fn().mockResolvedValue(null);
-      DexScreenerClient.prototype.getTokenByAddress = mockGetToken;
-      GeckoTerminalClient.prototype.getTokenInfo = mockGetToken;
+      const aggregatorTest = new TokenAggregatorService();
+      (aggregatorTest as any).dexScreener = {
+        getTokenByAddress: jest.fn().mockResolvedValue(null),
+      };
+      (aggregatorTest as any).geckoTerminal = {
+        getTokenInfo: jest.fn().mockResolvedValue(null),
+      };
 
-      const result = await aggregator.getTokenByAddress('unknown');
+      const result = await aggregatorTest.getTokenByAddress('unknown');
 
       expect(result).toBeNull();
     });

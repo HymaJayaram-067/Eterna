@@ -93,9 +93,9 @@ export class DexScreenerClient {
       .filter(token => token.token_address);
   }
 
-  private calculateSolPrice(priceUsd?: string, priceNative?: string): number {
-    if (priceNative) {
-      return parseFloat(priceNative);
+  private calculateSolPrice(priceUsd?: string, _priceNative?: string): number {
+    if (_priceNative) {
+      return parseFloat(_priceNative);
     }
     if (priceUsd) {
       // Approximate SOL price (this is a fallback, ideally fetch real SOL price)
@@ -105,7 +105,7 @@ export class DexScreenerClient {
     return 0;
   }
 
-  private calculateSolValue(usdValue: number | string, priceUsd?: string, priceNative?: string): number {
+  private calculateSolValue(usdValue: number | string, _priceUsd?: string, _priceNative?: string): number {
     const value = typeof usdValue === 'string' ? parseFloat(usdValue) : usdValue;
     if (isNaN(value)) return 0;
     
