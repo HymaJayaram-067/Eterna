@@ -1,0 +1,210 @@
+{
+  "info": {
+    "name": "Eterna - Real-time Data Aggregation Service",
+    "description": "Collection for testing the Eterna API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Check if the API is running"
+      }
+    },
+    {
+      "name": "Get All Tokens",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"]
+        },
+        "description": "Get list of all tokens with default pagination"
+      }
+    },
+    {
+      "name": "Get Tokens with Pagination",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?limit=10&cursor=0",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "cursor",
+              "value": "0"
+            }
+          ]
+        },
+        "description": "Get tokens with custom pagination"
+      }
+    },
+    {
+      "name": "Get Tokens Sorted by Volume",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?sortBy=volume&sortOrder=desc&limit=20",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "volume"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "description": "Get tokens sorted by volume in descending order"
+      }
+    },
+    {
+      "name": "Get Tokens Sorted by Price Change",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?sortBy=price_change&sortOrder=desc&limit=15",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "price_change"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "limit",
+              "value": "15"
+            }
+          ]
+        },
+        "description": "Get tokens sorted by price change"
+      }
+    },
+    {
+      "name": "Get Tokens Sorted by Market Cap",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?sortBy=market_cap&sortOrder=desc&limit=10",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "market_cap"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "description": "Get tokens sorted by market cap"
+      }
+    },
+    {
+      "name": "Get Token by Address (BONK)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens/DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens", "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"]
+        },
+        "description": "Get specific token details by address"
+      }
+    },
+    {
+      "name": "Search Tokens - BONK",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/search?q=bonk",
+          "host": ["{{base_url}}"],
+          "path": ["api", "search"],
+          "query": [
+            {
+              "key": "q",
+              "value": "bonk"
+            }
+          ]
+        },
+        "description": "Search for tokens by name or symbol"
+      }
+    },
+    {
+      "name": "Search Tokens - WIF",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/search?q=wif",
+          "host": ["{{base_url}}"],
+          "path": ["api", "search"],
+          "query": [
+            {
+              "key": "q",
+              "value": "wif"
+            }
+          ]
+        },
+        "description": "Search for WIF tokens"
+      }
+    },
+    {
+      "name": "API Root",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/",
+          "host": ["{{base_url}}"],
+          "path": [""]
+        },
+        "description": "Get API information and available endpoints"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
