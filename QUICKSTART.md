@@ -1,11 +1,11 @@
 # Quick Start Guide
 
-Get up and running with Eterna in under 5 minutes!
+Get up and running with Eterna (with UI) in under 5 minutes!
 
 ## Prerequisites
 
 - Node.js 18+ installed
-- (Optional) Redis installed locally
+- (Optional) Redis installed locally for caching
 
 ## Installation
 
@@ -14,8 +14,11 @@ Get up and running with Eterna in under 5 minutes!
 git clone https://github.com/HymaJayaram-067/Eterna.git
 cd Eterna
 
-# Install dependencies
-npm install
+# Install all dependencies (backend + frontend)
+npm run install:all
+# Or install separately:
+# npm install              # Backend
+# cd frontend && npm install  # Frontend
 
 # Create environment file
 cp .env.example .env
@@ -23,23 +26,35 @@ cp .env.example .env
 
 ## Running Locally
 
-### Option 1: Development Mode (with auto-reload)
+### Option 1: Development Mode (Recommended)
 
+Run backend and frontend separately for hot reload:
+
+**Terminal 1 - Backend:**
 ```bash
 npm run dev
 ```
+Backend runs on http://localhost:3000
 
-The server will start on http://localhost:3000
+**Terminal 2 - Frontend:**
+```bash
+npm run dev:frontend
+```
+Frontend runs on http://localhost:3001
+
+Open http://localhost:3001 in your browser to see the UI!
 
 ### Option 2: Production Build
 
 ```bash
-# Build the project
+# Build everything (backend + frontend)
 npm run build
 
 # Start the server
 npm start
 ```
+
+Open http://localhost:3000 to see the integrated UI!
 
 ### Option 3: Docker
 
@@ -52,9 +67,20 @@ docker build -t eterna .
 docker run -p 3000:3000 eterna
 ```
 
-## Testing the API
+## Testing the Application
 
-### Using curl
+### Using the Web UI
+
+1. **Open the UI** in your browser (http://localhost:3001 in dev mode, or http://localhost:3000 in production)
+2. **Watch for real-time updates** - Tokens with significant changes will highlight automatically
+3. **Try the filters**:
+   - Change sort order (Volume, Price Change, Market Cap, Liquidity)
+   - Select time periods (1h, 24h, 7d)
+   - Set minimum volume or market cap thresholds
+4. **View the charts** showing top tokens by volume and market cap
+5. **Monitor connection status** in the header (should show "Live")
+
+### Using the REST API (curl)
 
 ```bash
 # Get service info
@@ -67,21 +93,25 @@ curl http://localhost:3000/api/health
 curl http://localhost:3000/api/tokens
 
 # Get tokens with filters
-curl "http://localhost:3000/api/tokens?sortBy=volume&sortOrder=desc&limit=10"
+curl "http://localhost:3000/api/tokens?sortBy=volume&sortOrder=desc&limit=10&timePeriod=24h"
+
+# Get configuration
+curl http://localhost:3000/api/config
+
+# Update cache TTL
+curl -X PUT "http://localhost:3000/api/config/cache-ttl" \
+  -H "Content-Type: application/json" \
+  -d '{"ttl": 60}'
 
 # Refresh cache
 curl -X POST http://localhost:3000/api/refresh
 ```
 
-### Using Postman
-
-1. Open Postman
-2. Import `postman_collection.json`
-3. Update `baseUrl` variable to `http://localhost:3000`
-4. Run requests!
-
 ### Testing WebSocket
 
+Option 1: Use the React UI (automatic WebSocket connection)
+
+Option 2: Use the standalone test client:
 1. Open `websocket-client.html` in your browser
 2. Click "Connect"
 3. Watch live token updates!
@@ -89,19 +119,49 @@ curl -X POST http://localhost:3000/api/refresh
 ## Running Tests
 
 ```bash
-# Run all tests
+# Backend tests
 npm test
 
-# Run tests in watch mode
+# Backend tests in watch mode
 npm run test:watch
 
-# Run integration tests
+# Frontend tests
+cd frontend
+npm test
+
+# Integration tests
 ./test-integration.sh http://localhost:3000
 ```
 
 ## Common Issues
 
-### Redis Connection Error
+### Frontend Issues
+
+#### Frontend Won't Start
+**Error**: Port 3001 already in use
+
+**Solution**: React will automatically offer to use a different port. Press 'y' when prompted.
+
+#### Cannot Connect to Backend
+**Error**: Network error or API calls failing
+
+**Solution**:
+1. Ensure backend is running on port 3000
+2. Check `frontend/package.json` has `"proxy": "http://localhost:3000"`
+3. Verify REACT_APP_API_URL in `frontend/.env.development`
+
+#### WebSocket Not Connecting
+**Error**: Connection status shows "Disconnected"
+
+**Solution**:
+1. Verify backend is running
+2. Check browser console for errors
+3. Ensure REACT_APP_WS_URL is set correctly
+4. Check for firewall/proxy blocking WebSocket
+
+### Backend Issues
+
+#### Redis Connection Error
 
 **Error**: `Redis Client Error ECONNREFUSED`
 
@@ -138,16 +198,23 @@ PORT=3001
 
 ```
 Eterna/
-├── src/                    # Source code
-│   ├── api/               # REST API routes
-│   ├── services/          # Business logic & API clients
-│   ├── websocket/         # WebSocket server
-│   ├── utils/             # Utilities
-│   └── index.ts           # Entry point
-├── dist/                  # Compiled JavaScript (after build)
-├── node_modules/          # Dependencies
-├── .env                   # Environment variables
-└── package.json           # Project configuration
+├── frontend/              # React frontend application
+│   ├── src/
+│   │   ├── components/   # React components (Header, Filters, TokenCard, Charts)
+│   │   ├── services/     # API and WebSocket services
+│   │   ├── types.ts      # TypeScript type definitions
+│   │   └── App.tsx       # Main application component
+│   ├── public/           # Static assets
+│   └── build/            # Production build (after npm run build)
+├── src/                  # Backend source code
+│   ├── api/             # REST API routes
+│   ├── services/        # Business logic & API clients
+│   ├── websocket/       # WebSocket server
+│   ├── utils/           # Utilities
+│   └── index.ts         # Entry point
+├── dist/                # Compiled JavaScript (after build)
+├── .env                 # Environment variables
+└── package.json         # Project configuration
 ```
 
 ## API Quick Reference
@@ -156,8 +223,10 @@ Eterna/
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/` | Service information |
+| GET | `/` | Service information (or UI in production) |
 | GET | `/api/health` | Health check |
+| GET | `/api/config` | Get current configuration |
+| PUT | `/api/config/cache-ttl` | Update cache TTL |
 | GET | `/api/tokens` | List all tokens (paginated) |
 | GET | `/api/tokens/:address` | Get specific token |
 | POST | `/api/refresh` | Manually refresh cache |
@@ -170,6 +239,7 @@ Eterna/
 | `cursor` | string | Pagination cursor | `?cursor=30` |
 | `sortBy` | string | Sort field (volume, price_change, market_cap, liquidity) | `?sortBy=volume` |
 | `sortOrder` | string | Sort direction (asc, desc) | `?sortOrder=desc` |
+| `timePeriod` | string | Time period for price changes (1h, 24h, 7d) | `?timePeriod=24h` |
 | `minVolume` | number | Minimum volume filter | `?minVolume=1000` |
 | `minMarketCap` | number | Minimum market cap filter | `?minMarketCap=500` |
 
@@ -206,17 +276,23 @@ GECKOTERMINAL_RATE_LIMIT=300
 
 ## Next Steps
 
-1. **Explore the API** - Use Postman or curl to test endpoints
-2. **Watch WebSocket updates** - Open the HTML client
-3. **Read the docs** - Check README.md and DEPLOYMENT.md
-4. **Deploy** - Follow DEPLOYMENT.md to deploy to production
-5. **Customize** - Modify rate limits, cache TTL, etc.
+1. **Explore the UI** - Try the filtering, sorting, and real-time updates
+2. **Explore the API** - Use curl or Postman to test endpoints
+3. **Watch WebSocket updates** - See real-time price and volume changes
+4. **Read the docs** - Check README.md, FRONTEND.md, and DEPLOYMENT.md
+5. **Deploy** - Follow DEPLOYMENT.md to deploy to production
+6. **Customize** - Modify rate limits, cache TTL, UI components, etc.
 
 ## Getting Help
 
-- 📖 **Documentation**: README.md, DEPLOYMENT.md, TESTING.md
+- 📖 **Documentation**: 
+  - README.md - Complete project documentation
+  - FRONTEND.md - Frontend architecture and components
+  - DEPLOYMENT.md - Production deployment guide
+  - TESTING.md - Testing guidelines
+  - PROJECT_SUMMARY.md - Design decisions
 - 🐛 **Issues**: Check logs in console for debugging
-- 💬 **Questions**: Review PROJECT_SUMMARY.md for design decisions
+- 💬 **Questions**: Review documentation or check GitHub issues
 
 ## Performance Tips
 
