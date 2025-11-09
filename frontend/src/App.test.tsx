@@ -2,8 +2,18 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+// Mock the services
+jest.mock('./services/api');
+jest.mock('./services/websocket');
+
+test('renders Eterna app title', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const titleElement = screen.getByText(/Eterna/i);
+  expect(titleElement).toBeInTheDocument();
+});
+
+test('renders loading state initially', () => {
+  render(<App />);
+  const loadingElement = screen.getByText(/Loading tokens/i);
+  expect(loadingElement).toBeInTheDocument();
 });
