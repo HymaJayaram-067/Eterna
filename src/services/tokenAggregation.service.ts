@@ -1,4 +1,4 @@
-import { TokenData, TokenFilter, PaginatedResponse } from '../types';
+import { TokenData, TokenFilter, PaginatedResponse, DexScreenerToken, GeckoTerminalToken } from '../types';
 import { DexScreenerClient, GeckoTerminalClient, JupiterClient } from './dex.clients';
 import { cacheService } from './cache.service';
 
@@ -74,7 +74,7 @@ export class TokenAggregationService {
     }
   }
 
-  private convertDexScreenerToken(token: any): TokenData | null {
+  private convertDexScreenerToken(token: DexScreenerToken): TokenData | null {
     try {
       const solPrice = parseFloat(token.priceNative || '0');
       const volumeUsd = token.volume?.h24 || 0;
@@ -105,7 +105,7 @@ export class TokenAggregationService {
     }
   }
 
-  private convertGeckoTerminalToken(token: any): TokenData | null {
+  private convertGeckoTerminalToken(token: GeckoTerminalToken): TokenData | null {
     try {
       const attrs = token.attributes;
       const priceUsd = parseFloat(attrs.price_usd || '0');
@@ -170,7 +170,7 @@ export class TokenAggregationService {
           aVal = a.liquidity_sol;
           bVal = b.liquidity_sol;
           break;
-        case 'price_change':
+        case 'price_change': {
           const timePeriod = filter.timePeriod || '24h';
           if (timePeriod === '1h') {
             aVal = a.price_1hr_change;
@@ -180,6 +180,7 @@ export class TokenAggregationService {
             bVal = b.price_24hr_change || 0;
           }
           break;
+        }
       }
 
       return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
