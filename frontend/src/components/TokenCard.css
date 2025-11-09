@@ -1,0 +1,95 @@
+.token-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.token-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.token-card.highlighted {
+  animation: pulse 1s;
+  border-color: #3498db;
+  background: linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    background: white;
+  }
+  50% {
+    background: #e3f2fd;
+  }
+}
+
+.token-header {
+  margin-bottom: 15px;
+  border-bottom: 2px solid #ecf0f1;
+  padding-bottom: 10px;
+}
+
+.token-ticker {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin: 0 0 5px 0;
+}
+
+.token-name {
+  font-size: 14px;
+  color: #7f8c8d;
+  display: block;
+}
+
+.token-info {
+  margin: 15px 0;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.info-row .label {
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+.info-row .value {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.info-row .value.positive {
+  color: #27ae60;
+}
+
+.info-row .value.negative {
+  color: #e74c3c;
+}
+
+.token-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #ecf0f1;
+  font-size: 12px;
+}
+
+.protocol {
+  color: #3498db;
+  font-weight: 500;
+}
+
+.tx-count {
+  color: #95a5a6;
+}
