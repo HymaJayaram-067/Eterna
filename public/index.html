@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eterna - Real-time Token Monitor</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+
+        .filter-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .filter-item select,
+        .filter-item input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .tokens-grid {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tokens-grid h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #555;
+            border-bottom: 2px solid #ddd;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .positive {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .negative {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        #updateLog {
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .log-entry {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .log-entry.spike {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Eterna Token Monitor</h1>
+        <p class="subtitle">Real-time meme coin data aggregation from multiple DEX sources</p>
+
+        <div class="status">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Disconnected</span>
+            </div>
+            <div>
+                <strong>Last Update:</strong> <span id="lastUpdate">Never</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>Filters & Controls</h3>
+            <div class="filter-group">
+                <div class="filter-item">
+                    <label for="sortBy">Sort By</label>
+                    <select id="sortBy">
+                        <option value="volume">Volume</option>
+                        <option value="price_change">Price Change</option>
+                        <option value="market_cap">Market Cap</option>
+                        <option value="liquidity">Liquidity</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="sortOrder">Order</label>
+                    <select id="sortOrder">
+                        <option value="desc">Descending</option>
+                        <option value="asc">Ascending</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="timePeriod">Time Period</label>
+                    <select id="timePeriod">
+                        <option value="1h">1 Hour</option>
+                        <option value="24h" selected>24 Hours</option>
+                        <option value="7d">7 Days</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label for="minVolume">Min Volume (SOL)</label>
+                    <input type="number" id="minVolume" placeholder="0" min="0">
+                </div>
+            </div>
+            <button onclick="applyFilters()">Apply Filters</button>
+            <button onclick="connect()">Reconnect WebSocket</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h4>Total Tokens</h4>
+                <div class="value" id="totalTokens">0</div>
+            </div>
+            <div class="stat-card">
+                <h4>Updates Received</h4>
+                <div class="value" id="updateCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h4>Volume Spikes</h4>
+                <div class="value" id="volumeSpikes">0</div>
+            </div>
+            <div class="stat-card">
+                <h4>Avg Response Time</h4>
+                <div class="value" id="avgResponseTime">0ms</div>
+            </div>
+        </div>
+
+        <div class="tokens-grid">
+            <h3>Live Token Data (Top 20)</h3>
+            <div id="tokenList" class="loading">Connecting...</div>
+            <h3 style="margin-top: 20px;">Update Log</h3>
+            <div id="updateLog"></div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let tokens = [];
+        let updateCount = 0;
+        let volumeSpikes = 0;
+        const responseTimes = [];
+
+        function connect() {
+            const serverUrl = window.location.hostname === 'localhost' 
+                ? 'http://localhost:3000' 
+                : window.location.origin;
+
+            socket = io(serverUrl);
+
+            socket.on('connect', () => {
+                console.log('Connected to WebSocket');
+                updateStatus(true);
+                socket.emit('subscribe', {});
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Disconnected from WebSocket');
+                updateStatus(false);
+            });
+
+            socket.on('initial_data', (data) => {
+                console.log('Received initial data:', data);
+                tokens = data.tokens;
+                renderTokens();
+                updateLastUpdate();
+            });
+
+            socket.on('token_refresh', (data) => {
+                tokens = data.tokens;
+                renderTokens();
+                updateLastUpdate();
+            });
+
+            socket.on('token_updates', (data) => {
+                console.log('Received updates:', data);
+                updateCount += data.updates.length;
+                document.getElementById('updateCount').textContent = updateCount;
+
+                data.updates.forEach(update => {
+                    const logEntry = document.createElement('div');
+                    logEntry.className = `log-entry ${update.type === 'volume_spike' ? 'spike' : 'update'}`;
+                    logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${update.token.token_ticker}: ${update.type} - Price: ${update.priceChange.toFixed(2)}% | Volume: ${update.volumeChange.toFixed(2)}%`;
+                    
+                    const log = document.getElementById('updateLog');
+                    log.insertBefore(logEntry, log.firstChild);
+
+                    if (update.type === 'volume_spike') {
+                        volumeSpikes++;
+                        document.getElementById('volumeSpikes').textContent = volumeSpikes;
+                    }
+                });
+
+                updateLastUpdate();
+            });
+        }
+
+        function updateStatus(connected) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            
+            if (connected) {
+                dot.classList.add('connected');
+                text.textContent = 'Connected';
+            } else {
+                dot.classList.remove('connected');
+                text.textContent = 'Disconnected';
+            }
+        }
+
+        function updateLastUpdate() {
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+
+        function renderTokens() {
+            const container = document.getElementById('tokenList');
+            document.getElementById('totalTokens').textContent = tokens.length;
+
+            if (tokens.length === 0) {
+                container.innerHTML = '<div class="loading">No tokens available</div>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Name</th>
+                            <th>Price (SOL)</th>
+                            <th>Market Cap</th>
+                            <th>Volume (24h)</th>
+                            <th>1h Change</th>
+                            <th>Protocol</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            tokens.slice(0, 20).forEach(token => {
+                const change1h = token.price_1hr_change || 0;
+                const changeClass1h = change1h >= 0 ? 'positive' : 'negative';
+
+                html += `
+                    <tr>
+                        <td><strong>${token.token_ticker}</strong></td>
+                        <td>${token.token_name}</td>
+                        <td>${token.price_sol.toExponential(2)}</td>
+                        <td>${token.market_cap_sol.toFixed(2)} SOL</td>
+                        <td>${token.volume_sol.toFixed(2)} SOL</td>
+                        <td class="${changeClass1h}">${change1h >= 0 ? '+' : ''}${change1h.toFixed(2)}%</td>
+                        <td>${token.protocol}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        async function applyFilters() {
+            const sortBy = document.getElementById('sortBy').value;
+            const sortOrder = document.getElementById('sortOrder').value;
+            const timePeriod = document.getElementById('timePeriod').value;
+            const minVolume = document.getElementById('minVolume').value;
+
+            let url = `/api/tokens?sortBy=${sortBy}&sortOrder=${sortOrder}&timePeriod=${timePeriod}&limit=50`;
+            
+            if (minVolume) {
+                url += `&minVolume=${minVolume}`;
+            }
+
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch(url);
+                const responseTime = Date.now() - startTime;
+                responseTimes.push(responseTime);
+                
+                const avgTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+                document.getElementById('avgResponseTime').textContent = `${avgTime.toFixed(0)}ms`;
+
+                const data = await response.json();
+                if (data.success) {
+                    tokens = data.data;
+                    renderTokens();
+                }
+            } catch (error) {
+                console.error('Error fetching tokens:', error);
+            }
+        }
+
+        // Initialize on page load
+        window.onload = () => {
+            connect();
+            applyFilters();
+        };
+    </script>
+</body>
+</html>

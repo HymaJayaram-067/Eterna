@@ -1,0 +1,271 @@
+{
+  "info": {
+    "name": "Eterna - Real-time Data Aggregation API",
+    "description": "Complete API collection for testing the Eterna service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Check if the service is running"
+      }
+    },
+    {
+      "name": "Get All Tokens (Default)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"]
+        },
+        "description": "Get tokens with default parameters (20 items, sorted by volume)"
+      }
+    },
+    {
+      "name": "Get Tokens - Sorted by Volume",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?sortBy=volume&sortOrder=desc&limit=10",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "volume"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            }
+          ]
+        },
+        "description": "Get top 10 tokens sorted by 24h volume"
+      }
+    },
+    {
+      "name": "Get Tokens - Sorted by Price Change",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?sortBy=price_change&timePeriod=1h&sortOrder=desc&limit=20",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "price_change"
+            },
+            {
+              "key": "timePeriod",
+              "value": "1h"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "description": "Get tokens with highest 1h price change"
+      }
+    },
+    {
+      "name": "Get Tokens - Filtered by Min Volume",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?minVolume=100&sortBy=volume&sortOrder=desc",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "minVolume",
+              "value": "100"
+            },
+            {
+              "key": "sortBy",
+              "value": "volume"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            }
+          ]
+        },
+        "description": "Get tokens with minimum volume of 100 SOL"
+      }
+    },
+    {
+      "name": "Get Tokens - Filtered by Min Market Cap",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?minMarketCap=500&sortBy=market_cap&sortOrder=desc",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "minMarketCap",
+              "value": "500"
+            },
+            {
+              "key": "sortBy",
+              "value": "market_cap"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            }
+          ]
+        },
+        "description": "Get tokens with minimum market cap of 500 SOL"
+      }
+    },
+    {
+      "name": "Get Tokens - Paginated (Page 1)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?limit=5&cursor=0",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "5"
+            },
+            {
+              "key": "cursor",
+              "value": "0"
+            }
+          ]
+        },
+        "description": "Get first page with 5 tokens"
+      }
+    },
+    {
+      "name": "Get Tokens - Paginated (Page 2)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?limit=5&cursor=5",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "5"
+            },
+            {
+              "key": "cursor",
+              "value": "5"
+            }
+          ]
+        },
+        "description": "Get second page with 5 tokens (use nextCursor from previous response)"
+      }
+    },
+    {
+      "name": "Get Token by Address",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens/:address",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens", ":address"],
+          "variable": [
+            {
+              "key": "address",
+              "value": "576P1t7XsRL4ZVj38LV2eYWxXRPguBADA8BxcNz1xo8y"
+            }
+          ]
+        },
+        "description": "Get specific token by its address"
+      }
+    },
+    {
+      "name": "Invalidate Cache",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/cache/invalidate",
+          "host": ["{{base_url}}"],
+          "path": ["api", "cache", "invalidate"]
+        },
+        "description": "Force cache invalidation to fetch fresh data"
+      }
+    },
+    {
+      "name": "Get Tokens - Multiple Filters Combined",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/tokens?sortBy=price_change&timePeriod=24h&sortOrder=desc&minVolume=50&minMarketCap=100&limit=15",
+          "host": ["{{base_url}}"],
+          "path": ["api", "tokens"],
+          "query": [
+            {
+              "key": "sortBy",
+              "value": "price_change"
+            },
+            {
+              "key": "timePeriod",
+              "value": "24h"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "minVolume",
+              "value": "50"
+            },
+            {
+              "key": "minMarketCap",
+              "value": "100"
+            },
+            {
+              "key": "limit",
+              "value": "15"
+            }
+          ]
+        },
+        "description": "Advanced filtering with multiple parameters"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
