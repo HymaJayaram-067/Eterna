@@ -94,6 +94,38 @@ npm run build
 npm start
 ```
 
+### Using Docker
+
+Build and run with Docker Compose:
+```bash
+docker-compose up -d
+```
+
+This will start both the API server and Redis.
+
+Access the API at `http://localhost:3000`
+
+To stop:
+```bash
+docker-compose down
+```
+
+### Using Development Helper
+
+```bash
+# Complete setup (install dependencies + Redis)
+./dev.sh setup
+
+# Start development server
+./dev.sh dev
+
+# Run tests
+./dev.sh test
+
+# See all commands
+./dev.sh help
+```
+
 ### Running Tests
 ```bash
 npm test
