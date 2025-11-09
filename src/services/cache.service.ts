@@ -92,8 +92,12 @@ class CacheService {
   }
 
   async disconnect(): Promise<void> {
-    if (this.client) {
-      await this.client.quit();
+    if (this.client && this.isRedisAvailable) {
+      try {
+        await this.client.quit();
+      } catch (error) {
+        // Ignore errors during disconnect
+      }
       this.isRedisAvailable = false;
     }
   }
