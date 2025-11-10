@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: eterna-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: CACHE_TTL
+        value: 30
+      - key: REFRESH_INTERVAL
+        value: 30
+      - key: DEXSCREENER_RATE_LIMIT
+        value: 300
+      - key: JUPITER_RATE_LIMIT
+        value: 600
+      - key: GECKOTERMINAL_RATE_LIMIT
+        value: 300
+    healthCheckPath: /api/health
+
+databases:
+  - name: eterna-redis
+    plan: free
