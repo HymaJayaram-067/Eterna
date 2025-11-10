@@ -37,14 +37,16 @@ class App {
 
     // Serve static files from the React app in production
     if (config.server.nodeEnv === 'production') {
-      const frontendPath = path.join(__dirname, '../../frontend/build');
+      // Path from dist/index.js to frontend/build
+      // dist/index.js -> ../frontend/build
+      const frontendPath = path.join(__dirname, '../frontend/build');
       this.app.use(express.static(frontendPath));
     }
 
     // Root endpoint - serve API info or React app
     this.app.get('/', (req, res) => {
       if (config.server.nodeEnv === 'production') {
-        const frontendPath = path.join(__dirname, '../../frontend/build/index.html');
+        const frontendPath = path.join(__dirname, '../frontend/build/index.html');
         res.sendFile(frontendPath);
       } else {
         res.json({
@@ -68,7 +70,7 @@ class App {
     // Catch-all route for React frontend in production
     if (config.server.nodeEnv === 'production') {
       this.app.get('*', (req, res) => {
-        const frontendPath = path.join(__dirname, '../../frontend/build/index.html');
+        const frontendPath = path.join(__dirname, '../frontend/build/index.html');
         res.sendFile(frontendPath);
       });
     } else {

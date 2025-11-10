@@ -223,19 +223,42 @@ npm run build
 npm start
 ```
 
-### Issue: Frontend not loading in production
+### Issue: Frontend not loading - "ENOENT: no such file or directory, stat '/opt/render/project/frontend/build/index.html'"
+
+**Root Cause:** Frontend build path was incorrect or frontend wasn't built during deployment.
 
 **Solution:**
-1. Verify build command includes frontend: `npm run build`
-2. Check that `frontend/build` directory exists after build
-3. Ensure backend serves static files from `frontend/build`
 
-### Issue: Redis connection error
+✅ **Fixed** - Frontend path corrected from `../../frontend/build` to `../frontend/build` (relative to `dist/index.js`)
+
+If you still see this error:
+1. **Verify build logs** show: "The build folder is ready to be deployed"
+2. **Check build command** includes frontend: `npm run build` (builds both backend and frontend)
+3. Manual check on Render:
+   - The build should create `frontend/build/` directory
+   - Should contain `index.html` and static assets
+
+### Issue: Redis connection error - "ECONNREFUSED"
+
+**Root Cause:** Redis database wasn't linked to the web service, or REDIS_URL environment variable wasn't set.
 
 **Solution:**
-- **If using Render/Railway**: Check that Redis instance is created and `REDIS_URL` is set
-- **If using Vercel**: Redis won't work (serverless). App functions without it.
-- App will still work without Redis, just without caching
+
+✅ **Fixed** - Updated `render.yaml` to automatically link Redis database using `fromDatabase` configuration.
+
+The app will gracefully fall back to running without Redis (no caching), but for best performance:
+
+**Using Blueprint (Recommended):**
+- Redis will be automatically created and linked
+- REDIS_URL will be automatically set
+
+**Manual Setup:**
+1. Create Redis instance first
+2. Copy the Internal Redis URL
+3. Add `REDIS_URL` environment variable to your web service
+4. Redeploy
+
+**Note:** App works fine without Redis, just won't cache API responses.
 
 ### Issue: Port already in use
 

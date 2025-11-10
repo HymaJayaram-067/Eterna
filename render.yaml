@@ -20,6 +20,10 @@ services:
         value: 600
       - key: GECKOTERMINAL_RATE_LIMIT
         value: 300
+      - key: REDIS_URL
+        fromDatabase:
+          name: eterna-redis
+          property: connectionString
     healthCheckPath: /api/health
 
 databases:
