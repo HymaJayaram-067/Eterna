@@ -18,8 +18,7 @@
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
-    "install:all": "npm install && cd frontend && npm install",
-    "postinstall": "npm run build:backend"
+    "install:all": "npm install && cd frontend && npm install"
   },
   "keywords": ["defi", "meme-coin", "aggregator", "websocket", "real-time"],
   "author": "",

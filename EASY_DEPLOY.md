@@ -37,11 +37,12 @@ This guide helps you deploy Eterna to Render, Vercel, Railway, or other platform
 2. Create a **Web Service**:
    - Click "New +" → "Web Service"
    - Connect your repository
+   - Select branch: `copilot/add-ui-for-token-data-visualization` (or your main branch)
    - Settings:
      - **Name**: `eterna-backend`
      - **Environment**: Node
-     - **Build Command**: `npm install && npm run build`
-     - **Start Command**: `npm start`
+     - **Build Command**: `npm ci && npm run build`
+     - **Start Command**: `node dist/index.js`
      - **Plan**: Free
 
 3. Set **Environment Variables**:
@@ -50,6 +51,8 @@ This guide helps you deploy Eterna to Render, Vercel, Railway, or other platform
    REDIS_URL=<paste-redis-internal-url>
    PORT=10000
    ```
+
+4. Click **"Create Web Service"** and wait for deployment
 
 ---
 
@@ -151,12 +154,50 @@ Before deploying, ensure:
 
 ## 🔍 Troubleshooting Deployment Issues
 
+### Issue: Render shows "Cannot find module '/opt/render/project/src/dist/index.js'"
+
+**This is the most common Render deployment error.**
+
+**Root Cause:** The build was skipped or the `dist` directory wasn't created.
+
+**Solution:**
+
+1. **Check Build Command** in Render dashboard:
+   - Should be: `npm ci && npm run build`
+   - NOT: `npm install` or `echo "Skipping..."`
+
+2. **Verify Build Logs**:
+   - Look for "Running build command"
+   - Should see TypeScript compilation output
+   - Should see "Build successful"
+
+3. **Manual Fix**:
+   - Go to Render Dashboard → Your Service
+   - Click "Manual Deploy" → "Clear build cache & deploy"
+   - This forces a fresh build
+
+4. **Check render.yaml** (should have):
+   ```yaml
+   buildCommand: npm ci && npm run build
+   startCommand: node dist/index.js
+   ```
+
+5. **Local Test**:
+   ```bash
+   # Test the exact build process Render will use
+   rm -rf node_modules dist frontend/build
+   npm ci
+   npm run build
+   ls dist/  # Should see index.js
+   node dist/index.js  # Should start without errors
+   ```
+
 ### Issue: "Module not found" or dependency errors
 
 **Solution:**
 1. Ensure `typescript` is in `dependencies` (not `devDependencies`) ✅ Fixed
 2. Clear build cache and redeploy
-3. Check that `postinstall` script runs `build:backend`
+3. Remove `postinstall` script if it exists ✅ Fixed
 
 ### Issue: Build fails with "Cannot find module"
 
