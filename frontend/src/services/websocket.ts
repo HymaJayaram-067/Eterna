@@ -1,7 +1,23 @@
 import { io, Socket } from 'socket.io-client';
 import { WebSocketMessage } from '../types';
 
-const WS_URL = process.env.REACT_APP_WS_URL || 'http://localhost:3000';
+// In production, connect to the same domain the app is served from
+// In development, connect to localhost:3000
+const getWebSocketURL = (): string => {
+  if (process.env.REACT_APP_WS_URL) {
+    return process.env.REACT_APP_WS_URL;
+  }
+  
+  if (process.env.NODE_ENV === 'production') {
+    // In production, use the current domain
+    return window.location.origin;
+  }
+  
+  // Development fallback
+  return 'http://localhost:3000';
+};
+
+const WS_URL = getWebSocketURL();
 
 export class WebSocketService {
   private socket: Socket | null = null;

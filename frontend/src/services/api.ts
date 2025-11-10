@@ -1,7 +1,10 @@
 import axios from 'axios';
 import { Token, PaginatedResponse, TokenQueryParams, ApiResponse } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+// In production, REACT_APP_API_URL should be '/api' (relative URL)
+// In development, it should be 'http://localhost:3000/api'
+const API_BASE_URL = process.env.REACT_APP_API_URL || 
+  (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:3000/api');
 
 export const api = {
   /**

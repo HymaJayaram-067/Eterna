@@ -260,6 +260,29 @@ The app will gracefully fall back to running without Redis (no caching), but for
 
 **Note:** App works fine without Redis, just won't cache API responses.
 
+### Issue: Frontend shows "Disconnected" and "Network Error" in production
+
+**Root Cause:** Frontend was trying to connect to `localhost:3000` instead of the deployed domain.
+
+**Solution:**
+
+✅ **Fixed** - Frontend now uses relative URLs in production:
+- API calls use `/api` (relative to current domain)
+- WebSocket connects to `window.location.origin` (same domain as frontend)
+
+The frontend automatically detects production vs development:
+- **Production**: Connects to the same domain it's served from
+- **Development**: Connects to `http://localhost:3000`
+
+**Environment Variables:**
+- `frontend/.env.production` - Sets relative URLs for production builds
+- `frontend/.env.development` - Sets localhost URLs for local development
+
+If you still have connection issues:
+1. Check browser console for error messages
+2. Verify the backend is running and accessible
+3. Check that CORS is properly configured (should allow all origins)
+
 ### Issue: Port already in use
 
 **Solution:**
@@ -273,8 +296,8 @@ const port = process.env.PORT || 3000;
 
 **Solution:**
 1. Ensure platform supports WebSocket (Render, Railway ✅, Vercel ⚠️ limited)
-2. For HTTPS deployments, frontend should use `wss://` instead of `ws://`
-3. Check CORS settings allow your frontend domain
+2. WebSocket automatically uses `wss://` on HTTPS and `ws://` on HTTP
+3. Check CORS settings allow your frontend domain ✅ Already configured
 
 ---
 
