@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: eterna-backend
+    env: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CACHE_TTL
+        value: 30
+      - key: REFRESH_INTERVAL
+        value: 30
+      - key: DEXSCREENER_RATE_LIMIT
+        value: 300
+      - key: JUPITER_RATE_LIMIT
+        value: 600
+      - key: GECKOTERMINAL_RATE_LIMIT
+        value: 300
+      - key: REDIS_URL
+        fromDatabase:
+          name: eterna-redis
+          property: connectionString
+    healthCheckPath: /api/health
+
+databases:
+  - name: eterna-redis
+    plan: free

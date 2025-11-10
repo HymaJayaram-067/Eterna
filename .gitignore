@@ -1,11 +1,12 @@
 # Dependencies
 node_modules/
-package-lock.json
+frontend/node_modules/
 yarn.lock
 
 # Build output
 dist/
 build/
+frontend/build/
 
 # Environment
 .env

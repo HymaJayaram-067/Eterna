@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import http from 'http';
+import path from 'path';
 import { config } from './config';
 import logger from './utils/logger';
 import routes from './api/routes';
@@ -34,32 +35,54 @@ class App {
   private setupRoutes(): void {
     this.app.use('/api', routes);
 
-    // Root endpoint
+    // Serve static files from the React app in production
+    if (config.server.nodeEnv === 'production') {
+      // Path from dist/index.js to frontend/build
+      // dist/index.js -> ../frontend/build
+      const frontendPath = path.join(__dirname, '../frontend/build');
+      this.app.use(express.static(frontendPath));
+    }
+
+    // Root endpoint - serve API info or React app
     this.app.get('/', (req, res) => {
-      res.json({
-        name: 'Eterna Data Aggregator',
-        version: '1.0.0',
-        endpoints: {
-          tokens: '/api/tokens',
-          tokenByAddress: '/api/tokens/:address',
-          refresh: '/api/refresh',
-          health: '/api/health',
-        },
-        websocket: {
-          url: `ws://localhost:${config.server.port}`,
-          events: ['initial_data', 'update', 'error'],
-        },
-      });
+      if (config.server.nodeEnv === 'production') {
+        const frontendPath = path.join(__dirname, '../frontend/build/index.html');
+        res.sendFile(frontendPath);
+      } else {
+        res.json({
+          name: 'Eterna Data Aggregator',
+          version: '1.0.0',
+          endpoints: {
+            tokens: '/api/tokens',
+            tokenByAddress: '/api/tokens/:address',
+            refresh: '/api/refresh',
+            health: '/api/health',
+            config: '/api/config',
+          },
+          websocket: {
+            url: `ws://localhost:${config.server.port}`,
+            events: ['initial_data', 'update', 'error'],
+          },
+        });
+      }
     });
 
-    // 404 handler
-    this.app.use((req, res) => {
-      res.status(404).json({
-        success: false,
-        error: 'Not found',
-        timestamp: Date.now(),
+    // Catch-all route for React frontend in production
+    if (config.server.nodeEnv === 'production') {
+      this.app.get('*', (req, res) => {
+        const frontendPath = path.join(__dirname, '../frontend/build/index.html');
+        res.sendFile(frontendPath);
       });
-    });
+    } else {
+      // 404 handler for development
+      this.app.use((req, res) => {
+        res.status(404).json({
+          success: false,
+          error: 'Not found',
+          timestamp: Date.now(),
+        });
+      });
+    }
 
     // Error handler
     this.app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {

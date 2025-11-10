@@ -37,16 +37,6 @@ export interface WebSocketMessage {
   timestamp: number;
 }
 
-export interface CacheConfig {
-  ttl: number;
-  checkPeriod?: number;
-}
-
-export interface RateLimitConfig {
-  maxRequests: number;
-  perMinutes: number;
-}
-
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -54,4 +44,10 @@ export interface ApiResponse<T> {
   errorCode?: string;
   errorDetails?: string;
   timestamp: number;
+}
+
+export interface ChartDataPoint {
+  timestamp: number;
+  price: number;
+  volume: number;
 }
