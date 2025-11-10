@@ -154,9 +154,23 @@ Before deploying, ensure:
 
 ## 🔍 Troubleshooting Deployment Issues
 
+### Issue: npm ci error "can only install with an existing package-lock.json"
+
+**Root Cause:** The `package-lock.json` file is required for `npm ci` to work.
+
+**Solution:**
+✅ **Already Fixed** - `package-lock.json` files are now included in the repository for both backend and frontend.
+
+If you cloned before this fix:
+```bash
+git pull origin copilot/add-ui-for-token-data-visualization
+```
+
+The deployment will now work correctly with `npm ci`.
+
 ### Issue: Render shows "Cannot find module '/opt/render/project/src/dist/index.js'"
 
-**This is the most common Render deployment error.**
+**This was a common Render deployment error (now fixed).**
 
 **Root Cause:** The build was skipped or the `dist` directory wasn't created.
 
@@ -197,7 +211,7 @@ Before deploying, ensure:
 **Solution:**
 1. Ensure `typescript` is in `dependencies` (not `devDependencies`) ✅ Fixed
 2. Clear build cache and redeploy
-3. Remove `postinstall` script if it exists ✅ Fixed
+3. Ensure `package-lock.json` is committed ✅ Fixed
 
 ### Issue: Build fails with "Cannot find module"
 
